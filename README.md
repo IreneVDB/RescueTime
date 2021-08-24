@@ -14,3 +14,17 @@ You can find a complete Review about RescueTime (and a lot of data) on my [Websi
 
 ### Infographic
 
+<img src="./output/infographic_v1.png">
+
+<hr>
+
+### Visualization of Screen Time
+
+<img src="./output/2020-12-01_Computer_bits.png">
+
+<hr>
+
+### Visualization of Time on Mobile Devices
+
+<img src="./output/2020-12-01_Mobile_bits.png">
+
