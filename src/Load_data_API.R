@@ -2,6 +2,7 @@ library(httr)
 library(keyring)
 library(lubridate)
 library(tidyverse)
+library(pins)
 
 get.RT.api <- function(key, perspective, taxonomy, interval, startdate, enddate, format, device, username, password){
   url <- paste0("https://www.rescuetime.com/anapi/data?key=", key, "&perspective=", perspective, "&restrict_kind=",
@@ -10,43 +11,51 @@ get.RT.api <- function(key, perspective, taxonomy, interval, startdate, enddate,
   get_data <- GET(url, authenticate(username, password, type = "basic"))
   content <- content(get_data, as = "parsed")
 }
-
-# reports per minute are limited to time span of 1 month:
-get.monthly.report.by.5min <- function(month, year, device){
-  startdate <- ym(paste(year, month, "-"))
-  enddate <- ymd(paste(year, month, as.numeric(days_in_month(startdate)), sep ="-"))
+update.RT <- function(){
+  last_date <- as_date(rev(rev(RescueTime[["pc"]])[[1]]$Date)[1])
   
-  data <- get.RT.api(key = key_get("key2", keyring= "RescueTime"),
-                     perspective = "interval",
-                     taxonomy = "activity",
-                     interval = "minute",
-                     startdate = startdate,
-                     enddate = enddate,
-                     format = "csv",
-                     device = device,
-                     username = key_get("username", keyring= "RescueTime"),
-                     password = key_get("password", keyring= "RescueTime"))
-  }
+  new_data <- map(c("computers", "mobile"), get.RT.api,
+                  key = key_get("key", keyring= "RescueTime"),
+                  perspective = "interval",
+                  taxonomy = "activity",
+                  interval = "minute",
+                  startdate = last_date,
+                  enddate = Sys.Date(),
+                  format = "csv",
+                  username = key_get("username", keyring= "RescueTime"),
+                  password = key_get("password", keyring= "RescueTime"))
+  
+  RescueTime[["pc"]][[paste0(last_date,"to", Sys.Date())]] <- new_data[[1]]
+  RescueTime[["mobile"]][[paste0(last_date,"to", Sys.Date())]] <- new_data[[2]]
+}
 
-# get all for longer time span:
-dates <- seq(ym("2020-07"), Sys.Date(), by = "month")
+# update rescuetime data with the lastest data per 5 min (only up to 1 month can be obtained with free account)
+load("data/RescueTime_all.RData")
+update.RT()
+save(RescueTime_all, file = "data/RescueTime_all.RData")
+
+# filter Activities to aggregate / anonymize websites:
 RescueTime <- list()
 
-RescueTime[["pc"]] <- map2(month(dates), year(dates), get.monthly.report.by.5min, device = "computers")
-names(RescueTime[["pc"]]) <- format(dates, "%Y-%m")
+Top10_websites <- bind_rows(RescueTime_all[["pc"]][which(map_int(RescueTime_all[["pc"]], nrow) > 0)]) %>%
+  distinct() %>%
+  filter(grepl("\\.[a-z]{2,3}$", Activity) == TRUE) %>%
+  group_by(Activity) %>%
+  summarise(Time = sum(`Time Spent (seconds)`)) %>%
+  arrange(desc(Time))
 
-RescueTime[["mobile"]] <- map2(month(dates), year(dates), get.monthly.report.by.5min, device = "mobile")
-names(RescueTime[["mobile"]]) <- format(dates, "%Y-%m")
+RescueTime[["pc_all"]] <- bind_rows(RescueTime_all[["pc"]][which(map_int(RescueTime_all[["pc"]], nrow) > 0)]) %>%
+  distinct() %>%
+  mutate(Activity = case_when(grepl("github", Activity) == TRUE ~ "github.io",
+                              TRUE ~ Activity),
+         Activity = ifelse(grepl("\\.[a-z]{2,3}$", Activity) == FALSE |
+                             Activity %in% Top10_websites$Activity[1:10] |
+                             Activity %in% c("github.io", "rstudio.com", "r-bloggers.com", "stackoverflow.com"),
+                           Activity, "Website_other"))
 
-save(RescueTime, file = "data/RescueTime.RData")
+RescueTime[["mobile_all"]] <- bind_rows(RescueTime_all[["mobile"]][which(map_int(RescueTime_all[["mobile"]], nrow) > 0)]) %>%
+  distinct()
+
+pin(RescueTime, "RescueTime")
 
 
-# Without Premium: get all data for past month, preferably every 1st day of the month:
-load("data/RescueTime.RData")
-last_month <- ym(format(Sys.Date(), format = "%Y-%m")) - months(1)
-
-data_last_month <- map(c("computers", "mobile"), get.monthly.report.by.5min, 
-                       month = month(last_month), year = year(last_month))
-
-RescueTime[["pc"]][[format(last_month, "%Y-%m")]] <- data_last_month[[1]]
-RescueTime[["mobile"]][[format(last_month, "%Y-%m")]] <- data_last_month[[2]]

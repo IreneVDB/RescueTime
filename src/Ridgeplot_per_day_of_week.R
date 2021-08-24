@@ -1,5 +1,8 @@
 library(ggridges)
 library(ggtext)
+library(pins)
+library(tidyverse)
+library(lubridate)
 
 # functions to summarize data: ----
 get.data <- function(my_list){
@@ -29,30 +32,8 @@ summarise.5mins <- function(df){
     mutate(row = row_number() - 1,
            ndays = ndays) 
 }
-get.summary.data.RT <- function(){
-  
-  summary <- bind_rows("laptop" = summarise.5mins(get.data(RescueTime[["pc"]])), 
-                       "mobile device" = summarise.5mins(get.data(RescueTime[["mobile"]])), .id = "device") %>%
-    distinct() %>%
-    mutate(device = fct_reorder(device, Time, .desc=TRUE))
-}
 
-# load/make the dfs ----
-RescueTime <- pin_get("RescueTime")
-pc_Times <- get.summary.data.RT()
-
-# pc <- get.data(RescueTime[["pc"]])
-# 
-# rstudio <- pc %>%
-#   filter(Activity == "rstudio") %>%
-#   left_join(data.frame(Date = unique(pc$Date)), ., by = "Date") %>%
-#   arrange(Date)
-# 
-# Pc_vs_R <- bind_rows("Laptop" = summarise.5mins(pc), 
-#                      "RStudio" = summarise.5mins(rstudio), .id = "Activity") %>%
-#   mutate(Activity = fct_reorder(Activity, Time, .desc=TRUE))
-
-# function for df summarized in 5 min intervals with 2 groups ----
+# function to make ggridge plot: ----
 make.ggridge.identity.5min <- function(df, group, hues, starttime=0){
   
   Totals <- df %>%
@@ -69,7 +50,7 @@ make.ggridge.identity.5min <- function(df, group, hues, starttime=0){
     subtitle_add <- unique(df$ndays)
   } else{
     subtitle_add <- paste("<span style = 'color: ", colors[1], ";'>", unique(df$ndays)[1], 
-                     "</span> / <span style = 'color: ", colors[2], ";'>", unique(df$ndays)[2], "</span>")
+                          "</span> / <span style = 'color: ", colors[2], ";'>", unique(df$ndays)[2], "</span>")
   }
   
   title <- paste0("Time on <span style = 'color: ", colors[1], ";'>", levels(df[[group]])[1], 
@@ -106,3 +87,17 @@ make.ggridge.identity.5min <- function(df, group, hues, starttime=0){
     scale_fill_manual(values = hsv(h=hues, s = 0.6, v = 0.9)) +
     scale_color_manual(values = hsv(h=hues, s = 0.8, v = 0.7)) 
 }
+
+# make ggridge plot from time on PC vs time on Mobile:
+
+RescueTime <- pin_get("RescueTime")
+
+pc_Times <- bind_rows("laptop" = summarise.5mins(get.data(RescueTime[["pc"]])), 
+                       "mobile device" = summarise.5mins(get.data(RescueTime[["mobile"]])), .id = "device") %>%
+    distinct() %>%
+    mutate(device = fct_reorder(device, Time, .desc=TRUE))
+
+png(paste0("output/", Sys.Date(), "_pcTimes.png"), 
+    width = 13, height =8, units = "in", res = 300)
+make.ggridge.identity.5min(df=pc_Times, group="device", hues=c(0.53, 0.78), starttime=5)
+dev.off()
