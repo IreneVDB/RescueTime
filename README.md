@@ -14,4 +14,3 @@ You can find a complete Review about RescueTime (and a lot of data) on my [Websi
 
 ### Infographic
 
-<img src="./output/infographic_v1.png">
