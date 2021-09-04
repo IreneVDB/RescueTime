@@ -8,7 +8,7 @@ You can find a complete Review about RescueTime (and a lot of data) on my [Websi
 
 ### Visualization of the [time spent on laptop and mobile devices](https://github.com/IreneVDB/RescueTime/tree/master/src) with `{ggridge}` and `{ggtext}`
 
-<img src="./output/2021-08-24_pcTimes.png">
+<img src="./output/pcTimes.png">
 
 <hr>
 
