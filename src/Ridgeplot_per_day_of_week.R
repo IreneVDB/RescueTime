@@ -3,17 +3,24 @@ library(ggtext)
 library(pins)
 library(tidyverse)
 library(lubridate)
-#library(patchwork)
 
 # make ggridge plot from time on PC vs time on Mobile:
 
 RescueTime <- pin_get("RescueTime")
 
+Productivity_col <- rgb(red = c(13, 65, 177, 218, 212, 160),
+                        green = c(88, 130, 193, 105, 28, 235),
+                        blue = c(193, 221, 191, 93, 21, 142),
+                        names = c("Very Productive", "Productive", "Neutral", 
+                                  "Distracting", "Very Distracting", "Mobile Phone"),
+                        maxColorValue = 255)
+
 pc_Times <- bind_rows("laptop" = RescueTime[["pc"]], 
                       "mobile devices" = RescueTime[["mobile"]], .id = "device") 
 
-ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA, tracker, 
-                                     time_interval=5, hues, starttime=0, font="Comfortaa"){
+ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA,
+                                     time_interval = 5, starttime=0, colors,
+                                     font = "Comfortaa"){
   
   if(any(is.na(count_missing_days))){
     count_missing_days <- sapply(unique(df[[group_by]]), is.character, 
@@ -38,8 +45,8 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA, trac
     } else{
       DateTimes <- ymd_hm(paste(rep(unique(df[which(df[[group_by]] == factor),]$Date), 
                                     each = 24 * 60 / time_interval),
-                                paste(seq(0, 24 - time_interval/60, by = time_interval/60) %/% 1, 
-                                      round(seq(0, 24 - time_interval/60, by = time_interval/60) %% 1 * 60), 
+                                paste(seq(0, 24 - time_interval / 60, by = time_interval / 60) %/% 1, 
+                                      round(seq(0, 24 - time_interval / 60, by = time_interval / 60) %% 1 * 60), 
                                       sep = ":")))
     }
     
@@ -70,7 +77,7 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA, trac
     filter(as.numeric(substr(Timebin, 1, 2)) >= starttime) %>%
     mutate(row = row - starttime * (60 / time_interval))
   
-  colors <- hsv(hues, 0.8, 0.7)
+  #colors <- hsv(hues, 0.8, 0.7)
   
   # Define title and subtitle: 
   
@@ -81,51 +88,53 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA, trac
                           "</span>/<span style = 'color: ", colors[2], ";'>", unique(Timebin$ndays)[2], "</span>")
   }
   
-  title <- paste0("How much time do I spend on my <span style = 'color: ", colors[1], ";'>", levels(Summary$group)[1], 
-                  "</span> and <span style = 'color: ",
-                  colors[2], ";'>", levels(Summary$group)[2], "</span>?")
+  title <- paste0("Time spent on <span style = 'color: ", colors[1], ";'>", levels(Summary$group)[1], 
+                  "</span> vs. <span style = 'color: ",
+                  colors[2], ";'>", levels(Summary$group)[2], "</span>")
   
-  subtitle <- paste0("Measured with ", "<img src='img/", tracker, ".png' width='20'/> ", 
-                     tracker, " (", subtitle_add, " days)")
-  
-  caption <- "Graphic: Irene van den Broek | @JeBentWatJeMeet"
+  subtitle <- paste0("Measured with RescueTime (", subtitle_add, " days)")
   
   # make the plot:
-  breaks <- seq(0, (24 - starttime) * (60 / time_interval) - 1, by = 60 / time_interval)
-  r_mar <- 70
-  l_mar <- 10
+  breaks <- seq(0, (24 - starttime) * (60 / time_interval) - 1, 
+                by = 60 / time_interval)
   
   ggplot(data = df_time, aes(x = row, y = Weekday)) + 
     geom_density_ridges(aes(fill = group, color = group,  height = Time),
-                        stat="identity", alpha = 0.8, size = 0.2, scale = 0.9, show.legend = FALSE) +
-    geom_text(data = Totals, aes(x= (24-starttime) * (12 + 1/4), y = c(1:7 + 1, 1:7 + 0.7),
+                        stat="identity", alpha = 0.75, size = 0.2, scale = 0.9, show.legend = FALSE) +
+    geom_text(data = Totals, aes(x= (24 - starttime) * (12 + 1/4), y = c(1:7 + 1, 1:7 + 0.7),
                                  label = paste(Total_chr,  "/day"),
-                                 hjust=0, vjust=1, family = font, color = group),
-              show.legend = FALSE, size = 4.2) +
+                                 hjust = 0, vjust = 1, family = font, color = group),
+              show.legend = FALSE, size = 3.5) +
     coord_cartesian(clip = "off") +
-    labs(x = "Time of Day", y = NULL, title = title, subtitle = subtitle, caption=caption) +
+    labs(x = "Time of Day", y = NULL, title = title, subtitle = subtitle) +
     theme_minimal(base_family = font) +
-    theme(plot.margin = unit(c(5, r_mar + 5, 5, l_mar + 5), "pt"),
+    theme(plot.margin = unit(c(2, 22, 2, 2), "mm"),
           plot.background = element_rect(fill='transparent', color=NA),
           panel.grid = element_blank(),
           plot.title.position = "plot",
-          plot.caption.position = "plot",
-          plot.title = element_markdown(face = "bold", size = 24, hjust = 0, color = "grey20", margin=margin(l=-l_mar)),
-          plot.subtitle = element_markdown(size = 14, hjust = 0, color = "grey30", margin = margin(b = 20, l=-l_mar)),
-          plot.caption = element_markdown(size = 9, hjust=1, color = "grey30", margin=margin(r=-r_mar)),
-          axis.title.x = element_text(face = "bold", margin = margin(t = 6), color = "grey30", size = 14),
-          axis.text.x = element_text(size = 10, color = "grey40", margin = margin(t = 5)),
-          axis.text.y = element_text(size = 12, color = "grey40", margin = margin(r = 5), vjust = 0),
+          plot.title = element_markdown(face = "bold", size = 15, hjust = 0, color = "grey10"),
+          plot.subtitle = element_markdown(size = 11, hjust = 0, color = "grey20", margin = margin(b = 20)),
+          axis.title.x = element_text(face = "bold", margin = margin(t = 6), color = "grey40", size = 10),
+          axis.text.x = element_text(size = 8, color = "grey50", margin = margin(t = 5)),
+          axis.text.y = element_text(size = 10, color = "grey30", margin = margin(r = 5), vjust = 0),
           axis.ticks.x = element_line(color = "grey60", size = 0.2)) +
-    scale_x_continuous(expand = c(0, 0), breaks = breaks, labels = df_time$Timebin[breaks + 1]) +
+    scale_x_continuous(expand = c(0, 0), breaks = breaks, 
+                       labels = df_time$Timebin[breaks + 1]) +
     scale_y_discrete(expand = c(0,0)) +
-    scale_fill_manual(values = hsv(h=hues, s = 0.6, v = 0.9)) +
-    scale_color_manual(values = hsv(h=hues, s = 0.8, v = 0.7)) 
-  }
+    scale_fill_manual(values = hsv(h = rgb2hsv(col2rgb(colors))[1,], 
+                                   s = rgb2hsv(col2rgb(colors))[2,],
+                                   v = rgb2hsv(col2rgb(colors))[3,])) + #hsv(h=hues, s = 0.6, v = 0.9)) +
+    scale_color_manual(values = hsv(h = rgb2hsv(col2rgb(colors))[1,], 
+                                    s = rgb2hsv(col2rgb(colors))[2,],
+                                    v = rgb2hsv(col2rgb(colors))[3,] - 0.1)) 
+}
 
-#png("output/pcTimes.png", width=10, height=6, units="in", res=300)
-ggridge.weekday.identity(df=pc_Times, group_by="device", 
-                         count_missing_days =  list("laptop" = TRUE, "mobile devices" = FALSE),
-                         tracker="RescueTime", hues = c(0.53, 0.78), starttime=5,
-                         font="Kreon")
-dev.off()
+
+RT_plots <- pin_get("RT_plots")
+RT_plots[["LaptopMobile"]] <- ggridge.weekday.identity(df = pc_Times, group_by = "device", 
+                                                       count_missing_days =  list(
+                                                         "laptop" = TRUE, "mobile devices" = FALSE),
+                                                       colors = Productivity_col[c("Productive", "Very Distracting")],
+                                                       #hues = c(0.53, 0.78) , 
+                                                       starttime=5)
+pin(RT_plots, "RT_plots")
