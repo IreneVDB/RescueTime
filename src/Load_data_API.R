@@ -23,6 +23,7 @@ get.RT.api <- function(key, perspective, taxonomy, interval, startdate, enddate,
 # limit for 1 min activity data is 1 month - update per month max and repeat update until Sys.Date()
 # with free account limited to 3 month history: need to update at least every ~ 3month!
 # Note: Will not include most recent data from today (to avoid overlap or storage of 1st day of month)
+
 update.RT <- function(){
   load("data/RescueTime_all.RData")
   
@@ -60,6 +61,7 @@ update.RT <- function(){
 }
 update.RT()
 
+
 # Make single df for pc and mobile devices: ---
 get.RT.data <- function(){
   load("data/RescueTime_all.RData")
@@ -79,20 +81,100 @@ get.RT.data <- function(){
   }) %>%
     magrittr::set_names(devices)
   
-  # for pc activity aggregate website names
-  Top10_websites <- combine_df(RescueTime_all[["pc"]]) %>%
-    filter(grepl("\\.[a-z]{2,3}$", Activity) == TRUE) %>%
+  RescueTime[["pc"]] <- RescueTime[["pc"]] %>%
+    mutate(Activity = case_when(grepl("github", Activity, ignore.case = TRUE) == TRUE ~ "Github",
+                                grepl("wiki", Activity) == TRUE ~ "wikipedia",
+                                grepl("^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})", Activity) == TRUE ~ "IP address",
+                                grepl("timeout|time out", Activity, ignore.case = TRUE) == TRUE ~ "Time Out",
+                                grepl("youtube", Activity, ignore.case = TRUE) == TRUE ~ "YouTube",
+                                grepl("cisco", Activity, ignore.case = TRUE) == TRUE ~ "Cisco", 
+                                grepl("onedrive", Activity, ignore.case = TRUE) == TRUE ~ "MS OneDrive",
+                                grepl("linkedin", Activity, ignore.case = TRUE) == TRUE ~ "LinkedIn",
+                                grepl("stackoverflow", Activity, ignore.case = TRUE) == TRUE ~ "StackOverflow",
+                                grepl("rescuetime", Activity, ignore.case = TRUE) == TRUE ~ "RescueTime",
+                                grepl("jebentwatjemeet", Activity, ignore.case = TRUE) == TRUE ~ "JeBentWatJeMeet",
+                                grepl("localhost", Activity, ignore.case = TRUE) == TRUE ~ "localhost",
+                                grepl("pubmed", Activity, ignore.case = TRUE) == TRUE ~ "PubMed",
+                                grepl("rstudio.cloud", Activity, ignore.case=  TRUE) == TRUE ~ "rstudio.cloud",
+                                grepl("microsoft", Activity, ignore.case = TRUE) == TRUE ~ gsub(
+                                  "microsoft", "MS", Activity, ignore.case = TRUE),
+                                Activity == "loginwindow" ~ "Login Window",
+                                Activity == "berichten" ~ "messages",
+                                Activity == "notities" ~ "Notes",
+                                Activity == "archiveringshulpprogramma" ~ "archive utility",
+                                Activity == "teksteditor" ~ "TextEdit",
+                                Activity == "systeemvoorkeuren" ~ "System Preferences",
+                                Activity == "voorvertoning" ~ "Preview",
+                                Activity == "foto's" ~ "photos",
+                                Activity == "digitale-kleurenmeter" ~ "digital color meter",
+                                Activity == "lettertypecatalogus" ~ "font book",
+                                Activity == "installatieprogramma" ~ "installer",
+                                TRUE ~ Activity))
+  
+  # for pc activity aggregate website names:
+  Top10_websites <- RescueTime[["pc"]] %>%
+    filter(grepl("\\.[a-z]{2,}$", Activity) == TRUE) %>%
     group_by(Activity) %>%
     summarise(Time = sum(`Time Spent (seconds)`)) %>%
     arrange(desc(Time))
   
   RescueTime[["pc"]] <- RescueTime[["pc"]] %>%
-    mutate(Activity = case_when(grepl("github", Activity) == TRUE ~ "github.io",
-                                TRUE ~ Activity),
-           Activity = ifelse(grepl("\\.[a-z]{2,3}$", Activity) == FALSE |
+    mutate(Activity = ifelse(grepl("\\.[a-z]{2,}$", Activity) == FALSE |
                                Activity %in% Top10_websites$Activity[1:10] |
-                               Activity %in% c("github.io", "rstudio.com", "r-bloggers.com", "stackoverflow.com"),
-                             Activity, "Website_other"))
+                               Activity %in% c("rstudio.com", "r-bloggers.com"),
+                             Activity, "Website"))
+  
+  RescueTime[["day"]] <- RescueTime %>%
+    bind_rows() %>%
+    group_by(Date, Activity, Category, Productivity) %>%
+    summarise(Time = sum(`Time Spent (seconds)`)) %>%
+    ungroup() %>%
+    mutate(Overview = case_when(
+      Activity == "iOS Device" ~ Activity,
+      Category %in% c("Accounting","Administration", "Customer Relations", 
+                      "General Business", "Intelligence", "Marketing",
+                      "Operations", "Project Management","Sales") ~ 
+        "Business",
+      Category %in% c("Calendars", "Email", "General Communication & Scheduling", 
+                      "Instant Message", "Meetings", "Voice Chat") ~
+        "Communication & Scheduling",
+      Category %in% c("General Design & Composition", "Graphic Design", 
+                      "Presentation", "Writing") ~ 
+        "Design & Composition",
+      Category %in% c("Games", "Comedy", "General Entertainment", "Music", "Photos", "Video") ~
+        "Entertainment",
+      Category %in% c("Business", "General News & Opinion", "Regional", "Entertainment",
+                      "International", "Science & Technology", "Sports", "Society") ~
+        "News & Opinion",
+      Category %in% c("Business & Finance", "Employment", "Engineering & Technology", 
+                      "Food", "General Reference & Learning", "Health & Medicine", "Home & Garden", 
+                      "Legal & Gov't", "Maps & Regional", "Search", "Travel & Outdoors") ~
+        "Reference & Learning",
+      Category %in% c("Clothes & Personal", "Electronics", "General Shopping", 
+                      "Office") ~
+        "Shopping",
+      Category %in% c("General Social Networking", "Professional Networking") ~
+        "Social Networking",
+      Category %in% c("Data Modeling & Analysis", "Design & Planning", "Editing & IDEs", 
+                      "General Software Development", "Quality Assurance", "Systems Operations") ~
+        "Software Development",
+      Category %in% c("Anti-Virus & Spyware", "Browsers", "File Sharing", 
+                      "General Utilities", "Internet Utilities", "Virtualization", "Other") ~
+        "Utilities",
+      TRUE ~ "Uncategorized"),
+      Productivity = case_when(Productivity == -2 ~ "Very Distracting",
+                               Productivity == -1 ~ "Distracting",
+                               Productivity == 0 ~ "Neutral",
+                               Productivity == 1 ~ "Productive",
+                               Productivity == 2 ~ "Very Productive"),
+      Productivity = factor(Productivity, levels = c("Very Distracting",
+                                                     "Distracting", "Neutral",
+                                                     "Productive", "Very Productive")),
+      Overview = fct_reorder(Overview, Time, .fun = sum, .desc = TRUE),
+      Category = fct_reorder(Category, Time, .fun = sum, .desc = TRUE),
+      Activity = fct_reorder(Activity, Time, .fun = sum, .desc = TRUE),
+      Category_lump = fct_other(Category, keep = levels(Category)[1:20]),
+      Activity_lump = fct_other(Activity, keep = levels(Activity)[1:30])) 
   
   save(RescueTime, file = "data/RescueTime.RData")
   pin(RescueTime, "RescueTime")
