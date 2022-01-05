@@ -30,7 +30,7 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA,
   Summary <- df %>%
     rename(group = as.name(!!group_by)) %>%
     group_by(group, DateTime) %>%
-    summarise(Time = sum(`Time Spent (seconds)`)) %>%
+    summarise(Time = sum(Time_sec)) %>%
     mutate(group = fct_reorder(group, Time, .desc=TRUE))
   
   # create long df with ALL times including missing days if count_missing_days == TRUE:
@@ -76,8 +76,6 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA,
   df_time <- All_data %>%
     filter(as.numeric(substr(Timebin, 1, 2)) >= starttime) %>%
     mutate(row = row - starttime * (60 / time_interval))
-  
-  #colors <- hsv(hues, 0.8, 0.7)
   
   # Define title and subtitle: 
   
