@@ -126,36 +126,67 @@ get.RT.data <- function(){
           "Utilities",
         TRUE ~ "Uncategorized"))
   }
-  organize.activity <- function(df){
+  organize.activity <- function(df) {
     data <- df %>%
-      mutate(Activity = case_when(grepl("github", Activity, ignore.case = TRUE) == TRUE ~ "Github",
-                                  grepl("wiki", Activity) == TRUE ~ "wikipedia",
-                                  grepl("^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})", Activity) == TRUE ~ "IP address",
-                                  grepl("timeout|time out", Activity, ignore.case = TRUE) == TRUE ~ "Time Out",
-                                  grepl("youtube", Activity, ignore.case = TRUE) == TRUE ~ "YouTube",
-                                  grepl("cisco", Activity, ignore.case = TRUE) == TRUE ~ "Cisco", 
-                                  grepl("onedrive", Activity, ignore.case = TRUE) == TRUE ~ "MS OneDrive",
-                                  grepl("linkedin", Activity, ignore.case = TRUE) == TRUE ~ "LinkedIn",
-                                  grepl("stackoverflow", Activity, ignore.case = TRUE) == TRUE ~ "StackOverflow",
-                                  grepl("rescuetime", Activity, ignore.case = TRUE) == TRUE ~ "RescueTime",
-                                  grepl("jebentwatjemeet", Activity, ignore.case = TRUE) == TRUE ~ "JeBentWatJeMeet",
-                                  grepl("localhost", Activity, ignore.case = TRUE) == TRUE ~ "localhost",
-                                  grepl("pubmed", Activity, ignore.case = TRUE) == TRUE ~ "PubMed",
-                                  grepl("rstudio.cloud", Activity, ignore.case=  TRUE) == TRUE ~ "rstudio.cloud",
-                                  grepl("microsoft", Activity, ignore.case = TRUE) == TRUE ~ gsub(
-                                    "microsoft", "MS", Activity, ignore.case = TRUE),
-                                  Activity == "loginwindow" ~ "Login Window",
-                                  Activity == "berichten" ~ "messages",
-                                  Activity == "notities" ~ "Notes",
-                                  Activity == "archiveringshulpprogramma" ~ "archive utility",
-                                  Activity == "teksteditor" ~ "TextEdit",
-                                  Activity == "systeemvoorkeuren" ~ "System Preferences",
-                                  Activity == "voorvertoning" ~ "Preview",
-                                  Activity == "foto's" ~ "photos",
-                                  Activity == "digitale-kleurenmeter" ~ "digital color meter",
-                                  Activity == "lettertypecatalogus" ~ "font book",
-                                  Activity == "installatieprogramma" ~ "installer",
-                                  TRUE ~ Activity))
+      mutate(
+        Activity = case_when(
+          grepl("github", Activity, ignore.case = TRUE) == TRUE ~ "github",
+          grepl("localhost", Activity) == TRUE ~ "localhost",
+          grepl("sci-hub", Activity, ignore.case = TRUE) == TRUE ~ "sci-hub",
+          grepl("medium.com", Activity, ignore.case = TRUE) == TRUE ~ "medium",
+          grepl("wiki", Activity) == TRUE ~ "wikipedia",
+          grepl("office.com$|office365.com", Activity) == TRUE ~ "microsoft office",
+          grepl("^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})",
+            Activity) == TRUE ~ "IP address",
+          grepl("timeout|time out", Activity, ignore.case = TRUE) == TRUE ~ "timeout",
+          grepl("onedrive", Activity, ignore.case = TRUE) == TRUE ~ "microsoft onedrive",
+          grepl("linkedin", Activity, ignore.case = TRUE) == TRUE ~ "linkedin",
+          grepl("^amazon.", Activity, ignore.case = TRUE) == TRUE ~ "Amazon",
+          grepl("(\\.|^)ing\\.nl$", Activity, ignore.case = TRUE) == TRUE ~ "ING bank",
+          grepl("endnote", Activity, ignore.case = TRUE) == TRUE ~ "endnote",
+          grepl("dreem", Activity, ignore.case = TRUE) == TRUE ~ "Dreem",
+          grepl("ouraring", Activity, ignore.case = TRUE) == TRUE ~ "Oura Ring",
+          grepl("netatmo", Activity, ignore.case = TRUE) == TRUE ~ "netatmo",
+          grepl("atmotube", Activity, ignore.case = TRUE) == TRUE ~ "atmotube",
+          grepl("rescuetime", Activity, ignore.case = TRUE) == TRUE ~ "rescuetime",
+          grepl("pubmed", Activity, ignore.case = TRUE) == TRUE ~ "pubmed",
+          grepl("zoom", Activity, ignore.case = TRUE) == TRUE ~ "zoom",
+          grepl("uu\\.nl$", Activity, ignore.case = TRUE) == TRUE ~ "Universiteit Utrecht",
+          grepl("^.*\\.google.com$", Activity, ignore.case = TRUE) == TRUE ~ paste("google", str_extract(Activity, "^.*(?=\\.google)")),
+          grepl("jebentwatjemeet", Activity, ignore.case = TRUE) == TRUE ~ "JeBentWatJeMeet",
+          grepl("komoot", Activity, ignore.case = TRUE) == TRUE ~ "komoot",
+          grepl("wahoofitness", Activity, ignore.case = TRUE) == TRUE ~ "wahoofitness",
+          grepl("withings", Activity, ignore.case = TRUE) == TRUE ~ "withings",
+          grepl("dhl", Activity, ignore.case = TRUE) == TRUE ~ "dhl",
+          grepl("libreview", Activity, ignore.case = TRUE) == TRUE ~ "abbott freestyle libre",
+          grepl("meetup", Activity, ignore.case = TRUE) == TRUE ~ "meetup",
+          grepl("MS ", Activity, ignore.case = TRUE) == TRUE ~ gsub("MS ", "microsoft ", Activity),
+          grepl("shinyapps.io", Activity, fixed = TRUE) == TRUE ~ "shinyapps.io",
+          grepl("rstudio.com", Activity, fixed = TRUE) == TRUE ~ "rstudio.com",
+          grepl("rstudio.cloud", Activity, fixed = TRUE) == TRUE ~ "rstudio.cloud",
+          grepl("r-project.org", Activity, fixed = TRUE) == TRUE ~ "r-project.org",
+          grepl("r-lib.org", Activity, fixed = TRUE) == TRUE ~ "r-lib.org",
+          grepl("postnl.nl", Activity, fixed = TRUE) == TRUE ~ "postnl",
+          grepl("strava.com", Activity, fixed = TRUE) == TRUE ~ "strava.com",
+          Activity == "wise.com" ~ "transferwise.com",
+          Activity == "podcasts.apple.com" ~ "applepodcasts",
+          Activity == "irenevdb.netlify.app" ~ "irenevdb.rbind.io",
+          Activity == "google.com" ~ "google",
+          Activity == "Login Window" ~ "loginwindow",
+          Activity == "acrobat reader" ~ "adobe acrobat reader",
+          Activity == "berichten" ~ "messages",
+          Activity == "notities" ~ "Notes",
+          Activity == "archiveringshulpprogramma" ~ "archive utility",
+          Activity == "teksteditor" ~ "TextEdit",
+          Activity == "systeemvoorkeuren" ~ "System Preferences",
+          Activity == "voorvertoning" ~ "Preview",
+          Activity == "foto's" ~ "photos",
+          Activity == "digitale-kleurenmeter" ~ "digital color meter",
+          Activity == "lettertypecatalogus" ~ "font book",
+          Activity == "installatieprogramma" ~ "installer",
+          TRUE ~ Activity
+        )
+      )
     
     Top10_websites <- data %>%
       filter(grepl("\\.[a-z]{2,}$", Activity) == TRUE) %>%
@@ -166,7 +197,8 @@ get.RT.data <- function(){
     data <- data %>%
       mutate(Activity = ifelse(grepl("\\.[a-z]{2,}$", Activity) == FALSE |
                                  Activity %in% Top10_websites$Activity[1:10] |
-                                 Activity %in% c("rstudio.com", "r-bloggers.com"),
+                                 Activity %in% c("rstudio.com", "r-bloggers.com", "rstudio.cloud", 
+                                                 "r-project.org", "r-lib.org", "shinyapps.io"),
                                Activity, "Website"),
       ) 
   }
