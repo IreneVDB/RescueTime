@@ -185,10 +185,10 @@ get.RT.data <- function(){
           grepl("^cisco", Activity, ignore.case = TRUE) == TRUE ~ "cisco",
           grepl("ebay\\..{2,3}", Activity, ignore.case = TRUE) == TRUE ~ "ebay",
           grepl("safari-resource", Activity) == TRUE ~ "Safari",
+          grepl("^google\\..{2,3}$", Activity) == TRUE ~ "google",
           Activity == "wise.com" ~ "transferwise.com",
           Activity == "podcasts.apple.com" ~ "applepodcasts",
           Activity == "irenevdb.netlify.app" ~ "irenevdb.rbind.io",
-          Activity == "google.com" ~ "google",
           Activity == "Login Window" ~ "loginwindow",
           Activity == "acrobat reader" ~ "adobe acrobat reader",
           Activity == "berichten" ~ "messages",
@@ -203,14 +203,17 @@ get.RT.data <- function(){
           Activity == "installatieprogramma" ~ "installer",
           TRUE ~ Activity
         ),
-        Activity = case_when(grepl("microsoft|google", Activity, ignore.case = TRUE) == TRUE ~ str_to_title(Activity),
-                              TRUE ~ Activity)
+        Activity = case_when(Activity == "google scholar" ~ "google-scholar", TRUE ~ Activity),
+        Activity = case_when(
+          grepl("microsoft|google", Activity, ignore.case = TRUE) == TRUE ~ str_to_title(Activity),
+          TRUE ~ Activity
+        )
       )
     
     # anonymize websites except when:
     # in top X of websites
     # specified, eg with rstudio, r-bloggers etc
-    # a brand that has a simple-icon
+    # a brand that has a simple-icon or a customicon!
     
     Top_websites <- data %>%
       filter(grepl("\\.[a-z]{2,}$", Activity) == TRUE) %>%
@@ -218,15 +221,15 @@ get.RT.data <- function(){
       summarise(Time_sec = sum(Time_sec)) %>%
       arrange(desc(Time_sec))
     
-    simple_icons <- pin_get("icons")[["simple-icons"]]
+    icons <- c(pin_get("icons")[["simple-icons"]], pin_get("icons")[["custom_black"]])
     
     data <- data %>%
       mutate(
         Activity = ifelse(
           grepl("\\.[a-z]{2,}$", Activity) == FALSE |
-            tolower(str_extract(Activity, "^.*(?=\\..*$)")) %in% simple_icons |
-            tolower(str_extract(Activity, "(?<=\\.).*(?=\\..*$)")) %in% simple_icons |
-            tolower(str_extract(Activity, "^\\w+(?=\\s.*$)")) %in% simple_icons |
+            tolower(str_extract(Activity, "^.*(?=\\..*$)")) %in% icons |
+            tolower(str_extract(Activity, "(?<=\\.).*(?=\\..*$)")) %in% icons |
+            tolower(str_extract(Activity, "^\\w+(?=\\s.*$)")) %in% icons |
             Activity %in% Top_websites$Activity[1:10] |
             Activity %in% c(
               "rstudio.com",

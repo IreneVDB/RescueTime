@@ -6,7 +6,6 @@ library(png)
 library(reactable) 
 library(htmltools)
 library(sparkline)
-#library(fontawesome)
 library(icons) 
 library(htmlwidgets)
 
@@ -22,79 +21,6 @@ Productivity_col <- rgb(red = c(13, 65, 177, 218, 212, 160),
 icon_col <- c("#e5eeff", "#a6c4ff", "#251a66")
 
 all_dates <- seq(RescueTime[["day"]]$Date[1], rev(RescueTime[["day"]]$Date)[1], by = "day")
-
-# function to add icon-column:
-add.icons <- function(df, value = Activity, path_img = "img/Programs"){
-  
-  simple_icons <- pin_get("icons")[["simple-icons"]]
-  academic_icons <- pin_get("icons")[["academic-icons"]]
-  fontawesome_icons <- pin_get("icons")[["fontawesome"]]
-  customicons <- pin_get("icons")[["custom_black"]]
-  
-  df <- df %>%
-    mutate(icon = case_when(tolower(gsub("\\s*", "", {{value}})) %in% simple_icons ~ 
-                              paste("simple-icons", tolower(gsub("\\s", "", {{value}}))), # remove white space (" " does not always work)
-                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% simple_icons ~ 
-                              paste("simple-icons", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))), # e.g. ebay.com:look for ebay
-                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% simple_icons ~ 
-                              paste("simple-icons", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))), #e.g. account.google.com: look for google
-                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% simple_icons ~ 
-                              paste("simple-icons", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))), # get word before white space
-                            tolower(gsub("\\s", "", {{value}})) %in% academic_icons ~ 
-                              paste("academic-icons", tolower(gsub("\\s", "", {{value}}))),
-                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% academic_icons ~ 
-                              paste("academic-icons", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))),
-                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% academic_icons ~ 
-                              paste("academic-icons", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))),
-                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% academic_icons ~ 
-                              paste("academic-icons", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))),
-                            tolower(gsub("\\s", "", {{value}})) %in% fontawesome_icons ~ 
-                              paste("fontawesome", tolower(gsub("\\s", "", {{value}}))),
-                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% fontawesome_icons ~ 
-                              paste("fontawesome", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))),
-                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% fontawesome_icons ~ 
-                              paste("fontawesome", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))),
-                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% fontawesome_icons ~ 
-                              paste("fontawesome", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))),
-                            tolower(str_extract({{value}}, "^.*(?=s$)")) %in% fontawesome_icons ~ 
-                              paste("fontawesome", tolower(str_extract({{value}}, "^.*(?=s$)"))),
-                            tolower(gsub("\\s", "", {{value}})) %in% customicons ~ 
-                              paste0(tolower(gsub("\\s", "", {{value}})), ".png"),
-                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% customicons ~ 
-                              paste0(tolower(str_extract({{value}}, "^.*(?=\\..*$)")), ".png"),
-                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% customicons ~ 
-                              paste0(tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")), ".png"),
-                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% customicons ~ 
-                              paste0(tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")), ".png"),
-                            tolower(gsub("\\s", "", str_extract({{value}}, "^.*(?=\\s.*$)"))) %in% customicons ~ 
-                              paste0(gsub("\\s", "",tolower(str_extract({{value}}, "^.*(?=\\s.*$)"))), ".png"),
-                            {{value}} == "irenevdb.rbind.io" ~ "jebentwatjemeet.png",
-                            {{value}} == "Various websites" ~ "simple-icons safari",
-                            {{value}} == "loginwindow" ~ "fontawesome sign-in-alt",
-                            {{value}} == "Preview" ~ "fontawesome search",
-                            {{value}} == "timeout" ~ "fontawesome hourglass-half",
-                            {{value}} == "Mail" ~ "fontawesome envelope",
-                            {{value}} == "messages" ~ "fontaweomse comment",
-                            grepl("photo", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome image",
-                            {{value}} == "iWork Numbers" ~ "fontawesome chart-bar",
-                            {{value}} == "onewireviewer" ~ "simple-icons java",
-                            {{value}} %in% c("localhost", "IP address") ~ "fontawesome network-wired",
-                            {{value}} == "installer" ~ "fontawesome download",
-                            {{value}} == "screencastomatic" ~ "video",
-                            {{value}} %in% c("reminders", "Notes", "pages", "TextEdit") ~ "fontawesome list",
-                            {{value}} == "brackets" ~ "fontawesome code",
-                            {{value}} == "System Preferences" ~ "fontawesome cog",
-                            grepl("europa", {{value}}, ignore.case = TRUE) ~ "fontawesome globe-europe",
-                            grepl("sql", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome database",
-                            grepl("^r-|shinyapps", {{value}}, ignore.case = TRUE) == TRUE ~ "simple-icons r",
-                            grepl("color", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome eye-dropper",
-                            grepl("keychain", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome key",
-                            grepl("printer", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome print",
-                            grepl("books", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome book-open",
-                            grepl("endnote", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome folder-open",
-                            grepl("server", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome server",
-                            TRUE ~ ""))
-}
 
 # change uncategorized categories:---
 uncategorize <- function(df){
@@ -183,6 +109,78 @@ summarise.table <- function(df, ...){
     arrange(Overview, desc(Daily_min))
 
 }
+# function to add icon-column:
+add.icons <- function(df, value = Activity, path_img = "img/Programs"){
+  
+  simple_icons <- pin_get("icons")[["simple-icons"]]
+  academic_icons <- pin_get("icons")[["academic-icons"]]
+  fontawesome_icons <- pin_get("icons")[["fontawesome"]]
+  customicons <- pin_get("icons")[["custom_black"]]
+  
+  df <- df %>%
+    mutate(icon = case_when(tolower(gsub("\\s", "", {{value}})) %in% academic_icons ~ 
+                              paste("academic-icons", tolower(gsub("\\s", "", {{value}}))),
+                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% academic_icons ~ 
+                              paste("academic-icons", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))),
+                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% academic_icons ~ 
+                              paste("academic-icons", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))),
+                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% academic_icons ~ 
+                              paste("academic-icons", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))),
+                            tolower(gsub("\\s*", "", {{value}})) %in% simple_icons ~ 
+                              paste("simple-icons", tolower(gsub("\\s", "", {{value}}))), # remove white space (" " does not always work)
+                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% simple_icons ~ 
+                              paste("simple-icons", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))), # e.g. ebay.com:look for ebay
+                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% simple_icons ~ 
+                              paste("simple-icons", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))), #e.g. account.google.com: look for google
+                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% simple_icons ~ 
+                              paste("simple-icons", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))), # get word before white space
+                            tolower(gsub("\\s", "", {{value}})) %in% fontawesome_icons ~ 
+                              paste("fontawesome", tolower(gsub("\\s", "", {{value}}))),
+                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% fontawesome_icons ~ 
+                              paste("fontawesome", tolower(str_extract({{value}}, "^.*(?=\\..*$)"))),
+                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% fontawesome_icons ~ 
+                              paste("fontawesome", tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)"))),
+                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% fontawesome_icons ~ 
+                              paste("fontawesome", tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)"))),
+                            tolower(str_extract({{value}}, "^.*(?=s$)")) %in% fontawesome_icons ~ 
+                              paste("fontawesome", tolower(str_extract({{value}}, "^.*(?=s$)"))),
+                            tolower(gsub("\\s", "", {{value}})) %in% customicons ~ 
+                              paste0(tolower(gsub("\\s", "", {{value}})), ".png"),
+                            tolower(str_extract({{value}}, "^.*(?=\\..*$)")) %in% customicons ~ 
+                              paste0(tolower(str_extract({{value}}, "^.*(?=\\..*$)")), ".png"),
+                            tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")) %in% customicons ~ 
+                              paste0(tolower(str_extract({{value}}, "(?<=\\.).*(?=\\..*$)")), ".png"),
+                            tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")) %in% customicons ~ 
+                              paste0(tolower(str_extract({{value}}, "^\\w+(?=\\s.*$)")), ".png"),
+                            tolower(gsub("\\s", "", str_extract({{value}}, "^.*(?=\\s.*$)"))) %in% customicons ~ 
+                              paste0(gsub("\\s", "",tolower(str_extract({{value}}, "^.*(?=\\s.*$)"))), ".png"),
+                            {{value}} == "irenevdb.rbind.io" ~ "jebentwatjemeet.png",
+                            {{value}} == "Various websites" ~ "simple-icons safari",
+                            {{value}} == "loginwindow" ~ "fontawesome sign-in-alt",
+                            {{value}} == "Preview" ~ "fontawesome search",
+                            {{value}} == "timeout" ~ "fontawesome hourglass-half",
+                            {{value}} == "Mail" ~ "fontawesome envelope",
+                            {{value}} == "messages" ~ "fontaweomse comment",
+                            grepl("photo", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome image",
+                            {{value}} == "iWork Numbers" ~ "fontawesome chart-bar",
+                            {{value}} == "onewireviewer" ~ "simple-icons java",
+                            {{value}} %in% c("localhost", "IP address") ~ "fontawesome network-wired",
+                            {{value}} == "installer" ~ "fontawesome download",
+                            {{value}} == "screencastomatic" ~ "video",
+                            {{value}} %in% c("reminders", "Notes", "pages", "TextEdit") ~ "fontawesome list",
+                            {{value}} == "brackets" ~ "fontawesome code",
+                            {{value}} == "System Preferences" ~ "fontawesome cog",
+                            grepl("europa", {{value}}, ignore.case = TRUE) ~ "fontawesome globe-europe",
+                            grepl("sql", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome database",
+                            grepl("^r-|shinyapps", {{value}}, ignore.case = TRUE) == TRUE ~ "simple-icons r",
+                            grepl("color", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome eye-dropper",
+                            grepl("keychain", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome key",
+                            grepl("printer", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome print",
+                            grepl("books", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome book-open",
+                            grepl("endnote", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome folder-open",
+                            grepl("server", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome server",
+                            TRUE ~ ""))
+}
 
 Overview <- summarise.table(data, Overview)
 Category <- summarise.table(data, Overview, Category)
@@ -194,7 +192,7 @@ set.columns <- function(reactable_df,
                         colwidth_name = 320, 
                         colwidth_pulse = 280,
                         colwidth_donut = 56,
-                        col_height = 48){
+                        col_height = 52){
   
   columns <- list(
     Overview = colDef(name = "Main Category",
@@ -221,6 +219,7 @@ set.columns <- function(reactable_df,
                                  sparkline(values = cbind(-map(Overview$daily_Distracting, ~round(magrittr::extract(rev(.), 30:1)))[[index]], 
                                                           map(Overview$daily_Productive, ~round(magrittr::extract(rev(.), 30:1)))[[index]]),
                                            type = "bar", 
+                                           zeroColor	= icon_col[3],
                                            height = 40,
                                            width = 30 * 4,
                                            stackedBarColor = bar_col,
@@ -246,6 +245,7 @@ set.columns <- function(reactable_df,
                                              type = "bar", 
                                              height = 40,
                                              width = 4 * length(Overview$MonthLabel[[1]]),
+                                             zeroColor	= icon_col[3],
                                              stackedBarColor = bar_col,
                                              tooltipFormatter = JS(
                                                sprintf(
@@ -276,17 +276,15 @@ set.columns <- function(reactable_df,
       "Category" = colDef(
         name = "Category",
         vAlign = "center",
-        width = colwidth_name - colwidth_donut - 16
+        width = colwidth_name - 16,
+        cell = function(value, index){
+          donut <- donut(df = Cat, row = index, width = 48)
+          div(style = list(display = "flex", alignItems = "center"),
+              donut,
+              div(style = list(marginLeft = "8px"), value))
+        }
       ),
-      "Percentage" = colDef(
-        name = "",
-        width = colwidth_donut,
-        cell = function(value, index) {
-          donut(df = df, row = index, width = 48)
-        },
-        align = "left"
-      )
-    ),
+      "Percentage" = colDef(show = FALSE)),
     columns) %>%
       assign_in(., "Overview", value = colDef(show = FALSE)) %>%
       assign_in(., "monthly_Distracting", value = colDef(show = FALSE)) %>%
@@ -294,8 +292,18 @@ set.columns <- function(reactable_df,
   }
 
   if(substitute(reactable_df) == "Act") {
-    columns <- c(list("Activity" = colDef(show = FALSE),
-                      "Category" = colDef(show = FALSE)),
+    columns <- c(list(
+      "Activity" = colDef(
+        name = "Activity",
+        width = colwidth_name,
+        vAlign = "center",
+        cell = function(value, index) {
+            insert.icon(
+              df = Act, app = value, row = index, 
+              recolor = recolor, fill = icon_col[3])
+          }
+        ),
+      "Category" = colDef(show = FALSE)),
     columns,
     list("icon" = colDef(show = FALSE))) %>%
       assign_in(., "Overview", value = colDef(show = FALSE)) %>%
@@ -305,7 +313,8 @@ set.columns <- function(reactable_df,
 }
 
 # function to add icon to value: ----
-insert.icon <- function(df, app, row, img_path = "img/Programs", recolor = FALSE, fill = "black"){
+insert.icon <- function(df, app, row, img_path = "img/Programs", 
+                        recolor = FALSE, fill = "black"){
   icon <- df[["icon"]][row]
   icon_set <- ifelse(grepl(".png$", icon) == TRUE, "customicons",
                      str_extract(icon, "^.*(?=\\s)"))
@@ -348,10 +357,6 @@ insert.icon <- function(df, app, row, img_path = "img/Programs", recolor = FALSE
   div(style = list(display = "flex", alignItems = "center"),
       div(style = list(width = "40px"), src_icon),
       div(style = list(marginLeft = "8px", width = "300px"), app))
-
-  # tagList(div(style = list(display = "inline-block", marginRight = "8px",
-  #                          width = "40px"),
-  #             src_icon), app)
 }
 
 # Variables for reactable: ----
@@ -359,7 +364,8 @@ stacked_bar <- function(df, list_of_values, row, height = "28px"){
   full_width <- max(df[["Daily_min"]])
   width_bar <- df[["Daily_min"]][row]
   
-  label <- div(style = list(flexGrow = 1, marginLeft = "8px"), df[["Daily_time"]][row])
+  label <- div(style = list(flexGrow = 1, marginLeft = "8px", 
+                            fontSize = "12px"), df[["Daily_time"]][row])
   
   divs <- imap(list_of_values, function(value, i){
     bar <- div(style = list(background = Productivity_col[[df[["Productivity"]][[row]][i]]],
@@ -371,7 +377,8 @@ stacked_bar <- function(df, list_of_values, row, height = "28px"){
 bar_col <- unname(Productivity_col[c("Very Distracting", "Very Productive")])
 
 # function to make a donut chart with %: ----
-donut <- function(df, percentage, row, width = 60){
+donut <- function(df, row, width = 60){
+  percentage <- df[["Percentage"]][row]
   productivity <- Overview[["Productivity"]][[1]]
   colors <- unname(Productivity_col[productivity])
   r <- width / 2.5
@@ -381,7 +388,8 @@ donut <- function(df, percentage, row, width = 60){
   slice_end <- cumsum(values) 
   slice_begin <- c(0, slice_end[-5])
   
-  label <-  div(style = list(position = "absolute", lineHeight = paste0(width, "px")),
+  label <-  div(style = list(position = "absolute", fontSize = "12px", 
+                             lineHeight = paste0(width, "px")),
                 paste0(round(percentage * 100), "%"))
   
   circle <- tags$circle(cx = 0.5 * width, cy = 0.5 * width, r = r, fill = "transparent", 
@@ -392,142 +400,123 @@ donut <- function(df, percentage, row, width = 60){
     offset <- (100 - slice_begin[i] + 25) %% 100
     
     slice <- tags$circle(cx = 0.5 * width, cy = 0.5 * width, r = r, fill = "transparent", 
-                        stroke = colors[i], strokeWidth = width / 5, 
-                        strokeDasharray = array * length,
-                        strokeDashoffset = offset / 100 * length)
+                         stroke = colors[i], strokeWidth = width / 5, 
+                         strokeDasharray = array * length,
+                         strokeDashoffset = offset / 100 * length)
   })
   
   donut <- tags$svg(circle, slices)
   div(style = list(width = width, height = width, justifyContent = "center",
                    display = "inline-flex", position = "relative"), donut, label)
-  }
+}
 
 # make reactable ----
-reactable(
-  Overview,
-  pagination = FALSE,
-  sortable = FALSE,
-  groupBy = NULL,
-  theme = reactableTheme(
-    color = icon_col[3],
-    borderColor = icon_col[2],
-    cellPadding = "8px 8px",
-    style = list(fontFamily = "Comfortaa")
-  ),
-  columns = set.columns(Overview),
-  details = function(index) {
-    Cat <- Category[Category$Overview == Overview$Overview[index],]
-    if (length(unique(Cat$Category)) > 1) {
-      htmltools::div(
-        style = list(padding = "16px",
-                     background = icon_col[1]),
-        "A title",
-        reactable(
-          Cat,
-          pagination = FALSE,
-          sortable = FALSE,
-          outlined = TRUE,
-          theme = reactableTheme(color = icon_col[3],
-                                 borderColor = icon_col[2]),
-          columns = set.columns(Cat) %>%
-            assign_in(
-              .,
-              list("Pulse_rel", "cell"),
-              value =  function(value, index) {
-                stacked_bar(
-                  df = Cat,
-                  list_of_values = value,
-                  row = index,
-                  height = "40px"
-                )
-              }
-            ) %>%
-            assign_in(
-              .,
-              list("Percentage", "cell"),
-              value =  function(value, index) {
-                donut(
-                  df = Cat,
-                  percentage = value,
-                  row = index,
-                  width = 48
-                )
-              }
+make.reactable.RT <- function(time_limit, recolor) {
+  reactable(
+    Overview,
+    pagination = FALSE,
+    sortable = FALSE,
+    theme = reactableTheme(
+      color = icon_col[3],
+      borderColor = icon_col[2],
+      cellPadding = "8px 8px",
+      style = list(fontFamily = "Comfortaa")
+    ),
+    columns = set.columns(Overview),
+    details = function(index) {
+      Cat <- Category[Category$Overview == Overview$Overview[index], ]
+      if (length(unique(Cat$Category)) > 1) {
+        div(
+          style = list(padding = "16px"),
+          reactable(
+            Cat,
+            pagination = FALSE,
+            sortable = FALSE,
+            outlined = TRUE,
+            theme = reactableTheme(
+              backgroundColor = icon_col[1],
+              color = icon_col[3],
+              borderColor = icon_col[2]
             ),
-          details = function(index) {
-            Act <- Activity[Activity$Category == Cat$Category[index],] %>%
-              filter(Daily_min > 0.03)
-            if (length(unique(Act$Activity)) >= 1) {
-              div(
-                style = list(padding = "16px"),
-                span(
-                  style = list(
-                    fontWeight = "bold",
-                    fontSize = "18px",
-                    padding = "0px 12px"
-                  ),
-                  paste(
-                    "Time spend on programs and websites within",
-                    Cat$Category[index]
+            columns = set.columns(Cat) %>%
+              assign_in(
+                .,
+                list("Category", "cell"),
+                value = function(value, index){
+                  donut <- donut2(df = Cat, row = index, width = 48)
+                  div(style = list(display = "flex", alignItems = "center"),
+                      donut,
+                      div(style = list(marginLeft = "8px"), value))
+                }
+              ) %>%
+              assign_in(
+                .,
+                list("Pulse_rel", "cell"),
+                value =  function(value, index) {
+                  stacked_bar(
+                    df = Cat,
+                    list_of_values = value,
+                    row = index,
+                    height = "40px"
                   )
-                ),
-                reactable(
-                  Act,
-                  pagination = FALSE,
-                  sortable = FALSE,
-                  outlined = TRUE,
-                  fullWidth = TRUE,
-                  theme = reactableTheme(
-                    color = icon_col[3],
-                    borderColor = icon_col[2],
-                    backgroundColor = icon_col[1]
-                  ),
-                  columns = set.columns(Act) %>%
-                    assign_in(
-                      .,
-                      list("Pulse_rel", "cell"),
-                      value =  function(value, index) {
-                        stacked_bar(
-                          df = Act,
-                          list_of_values = value,
-                          row = index,
-                          height = "40px"
-                        )
-                      }
-                    ) %>%
-                    assign_in(
-                      .,
-                      "Activity",
-                      value = colDef(
-                        name = "Activity",
-                        width = 300,
-                        vAlign = "center",
-                        cell = function(value, index) {
-                          insert.icon(
+                }
+              ),
+            details = function(index) {
+              Act <- Activity[Activity$Category == Cat$Category[index], ] %>%
+                filter(Daily_min > time_limit)
+              if (length(unique(Act$Activity)) >= 1) {
+                div(
+                  style = list(padding = "16px"),
+                  reactable(
+                    Act,
+                    sortable = FALSE,
+                    outlined = TRUE,
+                    theme = reactableTheme(
+                      color = icon_col[3],
+                      borderColor = icon_col[2]
+                    ),
+                    columns = set.columns(Act) %>%
+                      assign_in(
+                        .,
+                        list("Pulse_rel", "cell"),
+                        value =  function(value, index) {
+                          stacked_bar(
                             df = Act,
-                            app = value,
+                            list_of_values = value,
                             row = index,
-                            fill = icon_col[3]
+                            height = "40px"
                           )
                         }
-                      )
-                    ) %>%
-                    assign_in(
-                      .,
-                      list("monthly_Distracting", "cell"),
-                      value = function(value, index) {
-                        sparkline(
-                          values = cbind(
-                            -Act$monthly_Distracting[[index]],
-                            Act$monthly_Productive[[index]]
-                          ),
-                          type = "bar",
-                          height = 40,
-                          width = 4 * length(Overview$MonthLabel[[1]]),
-                          stackedBarColor = bar_col,
-                          tooltipFormatter = htmlwidgets::JS(
-                            sprintf(
-                              "function(sparkline, options, field){
+                      ) %>%
+                      assign_in(
+                        .,
+                        list("Activity", "cell"),
+                        value = function(value, index) {
+                            insert.icon(
+                              df = Act,
+                              app = value,
+                              row = index,
+                              recolor = recolor,
+                              fill = icon_col[3]
+                            )
+                          }
+                        ) %>%
+                      assign_in(
+                        .,
+                        list("monthly_Distracting", "cell"),
+                        value = function(value, index) {
+                          sparkline(
+                            values = cbind(
+                              -Act$monthly_Distracting[[index]],
+                              Act$monthly_Productive[[index]]
+                            ),
+                            type = "bar",
+                            height = 40,
+                            width = 4 * length(Overview$MonthLabel[[1]]),
+                            stackedBarColor = bar_col,
+                            tooltipFormatter = htmlwidgets::JS(
+                              sprintf(
+                                "function(sparkline, options, field){
                                                            debugger;
                                                            return('<b>'+ %s[field[0].offset] + '</b><br/>' +
                                                            '<span style=color:' + field[0].color + '> &#9679 </span>' +
@@ -535,67 +524,56 @@ reactable(
                                                            '<span style=color:' + field[1].color + '> &#9679 </span>' +
                                                            -Math.round(field[1].value) + ' min/day');
                                                            }",
-                              jsonlite::toJSON(Act$MonthLabel[[1]])
+                                jsonlite::toJSON(Act$MonthLabel[[1]])
+                              )
                             )
                           )
-                        )
-                      }
-                    ) %>%
-                    assign_in(
-                      .,
-                      "daily_Distracting",
-                      value = colDef(
-                        name = "Daily time",
-                        align = "center",
-                        cell = function(value, index) {
-                          sparkline(values = Act$daily_Productive[[index]] - Act$daily_Distracting[[index]],
-                                      type = "bar", 
-                                      height = 40,
-                                      width = 30 * 4,
-                                      barColor = 	bar_col[2],
-                                      negBarColor	= bar_col[1],
-                                      zeroColor	= icon_col[3],
-                                      tooltipFormatter = JS(
-                                        sprintf(
-                                          "function(sparkline, options, field){
+                        }
+                      ) %>%
+                      assign_in(
+                        .,
+                        "daily_Distracting",
+                        value = colDef(
+                          name = "Daily time",
+                          align = "center",
+                          cell = function(value, index) {
+                            sparkline(
+                              values = Act$daily_Productive[[index]] - Act$daily_Distracting[[index]],
+                              type = "bar",
+                              height = 40,
+                              width = 150,
+                              barColor = 	bar_col[2],
+                              negBarColor	= bar_col[1],
+                              zeroColor	= icon_col[3],
+                              tooltipFormatter = JS(
+                                sprintf(
+                                  "function(sparkline, options, field){
                                                            debugger;
                                                            return('<b>'+ %s[field[0].offset] + '</b><br/>' +
                                                            '<span style=color:' + field[0].color + '> &#9679 </span>' +
                                                            Math.round(field[0].value) + ' minutes');
                                                            }",
-                                          jsonlite::toJSON(Overview$DateLabel[[1]])
-                                        )
-                                      ))
-                        }
+                                  jsonlite::toJSON(Overview$DateLabel[[1]])
+                                )
+                              )
+                            )
+                          }
+                        )
                       )
-                    )
+                  )
                 )
-              )
+              }
             }
-          }
+          )
         )
-      )
+      }
     }
-  }
-)
+  )
+}
+make.reactable.RT(time_limit = 1/60, recolor = FALSE)
 
 
-# To Do:
-
-# maak schaal Daily en Monthly trend gelijk (en add mean)
-# add header (with RT icon?)?
-# add headers to subtables?
-# use flex to fit Time per day label within width of column (i.e. bar widths should adjust, label width not)
-# more complex: Separate Time per day as Productive and Distracting (pos/neg)
-# figure out how to vertically align itens to center: now only works when i set height to 48 but this is very big: want itemslittel smaller and then in the middle, especially the stacked bar
-# add column Most used program/app and most used sub category: or mkae it a grouped table and include the subcats in the table?
-# make font work in browser
-# add column Percentage of all time
-# make color scheme: check Rescue Time site use light and dark blue from dashboard
-# add last day
-# chartRangeMax does not adjust - why?
-
-# sparkline als lijn
+# sparkline als lijn ----
 sparkline(
   values = (Act$daily_Distracting[[index]] + Act$daily_Productive[[index]]) / 60,
   type = "line",
@@ -652,7 +630,6 @@ body_str <- deparse(body)
 new_body <- parse(text = gsub("Overview", "Category", body_str))[[1]]
 
 body(columns_Overview[["Pulse_rel"]][["cell"]])[2] <- parse(text = gsub("Overview", "Category", body_str))[[1]]
-
 
 test <- columns_Overview %>%
   modify_in(., list("Pulse_rel", "cell"),
