@@ -6,6 +6,12 @@ You can find a complete Review about RescueTime (and a lot of data) on my [Websi
 
 <hr>
 
+### Reactable with time spent on various programs, apps and websites
+
+<img src="./output/Screenshot 2022-02-19 at 21.26.38.png">
+
+<hr>
+
 ### Visualization of the [time spent on laptop and mobile devices](https://github.com/IreneVDB/RescueTime/tree/master/src) with `{ggridge}` and `{ggtext}`
 
 <img src="./output/pcTimes.png">
