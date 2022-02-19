@@ -368,7 +368,70 @@ ggridge.weekday.identity <- function(df, group_by, count_missing_days = NA,
                                     v = rgb2hsv(col2rgb(colors))[3,] - 0.1)) 
 }
 
-# add ggplots 1 to 5 into list for easier input in Rmd: ----
+# Plot 6) Main categories with icons and donut chart: ----
+make.donut.RT <- function(img_path = "img"/"Categories"){
+  
+  Category <- RescueTime[["day"]] %>%
+    group_by(Overview, Productivity) %>%
+    summarise(Time_min = sum(Time_sec) / length(all_dates) / 60) %>%
+    mutate(TotTime = sum(Time_min))
+  
+  nhours <- length(all_dates) * sum(Category$Time_min) / 60
+  
+  make.donut <- function(df, category){
+    
+    subset <- df %>%
+      filter(Overview == category) %>%
+      mutate(fraction = Time_min / sum(Time_min))
+    
+    par(mar = c(2, 0, 0, 0), xaxs = "i", yaxs = "i", family = "Comfortaa")
+    
+    pie(subset$fraction, clockwise = TRUE,
+        col = Productivity_col[-6][unique(as.character(subset$Productivity))],
+        border = "white",labels = NA, xlim = c(-0.7, 0.7), ylim = c(-0.7, 0.7))
+    symbols(0,0, circles = 0.35, fg = "white", bg = "white",
+            add = TRUE, inches = FALSE)
+    text(0, -0.9, labels = category, font = 2, col = "grey20",
+         cex = 1, adj=c(0.5, 1), xpd = TRUE)
+    text(0, -1, paste0("\n(", round(unique(subset$TotTime)), " min/day)"),
+         col = "grey20", cex = 1, adj=c(0.5, 1), xpd = TRUE)
+  }
+  
+  h_title <- 1.5
+  h_legend <- 1.8
+  
+  layout(matrix(c(rep(1, 4), rep(2, 4), 3:14), nrow = 5, ncol =  4, byrow = TRUE),
+         heights = lcm(c(h_title, h_legend)))
+  
+  # first plot is a title + subtitle
+  par(mar = c(0, 0, 0, 0), family = "Comfortaa")
+  plot.new()
+  text(0, 1, "Productivity pulse of the 12 main Categories",
+       adj = c(0, 1.1), col = "grey20", font = 2, cex = 2, xpd = TRUE)
+  text(0, 0, paste0("Measured with RescueTime (", length(all_dates), " days)"),
+       adj = c(0, -0.1), col = "grey30", cex = 1.5, xpd = TRUE)
+  
+  # second plot is the legend:
+  par(mar = c(0, 0, 0, 0))
+  plot.new()
+  legend(0.5, 0.5, legend = levels(Category$Productivity),
+         fill = Productivity_col[levels(Category$Productivity)],
+         title.adj = 0, title.col = "grey20",
+         y.intersp = 1.2, text.col = "grey30",
+         border = "transparent", ncol=2,
+         cex = 1.2, xjust = 0.5, yjust = 0.5, bty = "n", xpd = TRUE)
+  
+  # then add the individual donut plots:
+  walk(levels(Category$Overview), function(Overview){
+    image <- readPNG(file.path(img_path, paste0(
+      gsub(" .*$", "", Overview), ".png")))
+    
+    make.donut(df = Category, category = Overview)
+    rasterImage(image, xleft = -0.5, xright = 0.5, ybottom = -0.5, ytop = 0.5)
+  })
+}
+
+# add ggplots 1 to 6 into list for easier input in Rmd: ----
 RT_plots <- pin_get("RT_plots")
 RT_plots[["Prod_pulse"]] <- make.alltime.pulse(Productivity[["all_time"]])
 RT_plots[["Prod_beeswarm"]] <- make.beeswarm(df = Productivity[["day"]], 
@@ -384,71 +447,6 @@ RT_plots[["LaptopMobile"]] <- ggridge.weekday.identity(df =  bind_rows("laptop" 
                                                          "laptop" = TRUE, "mobile devices" = FALSE),
                                                        colors = Productivity_col[c("Productive", "Very Distracting")],
                                                        starttime = 5)
+RT_plots[["donut"]] <- make.donut.RT
 
 pin(RT_plots, "RT_plots")
-
-
-# Plot 5) Main categories with icons and donut chart: ----
-# make.donut.RT <- function(plot_h = NA){
-#   
-#   Category <- RescueTime[["day"]] %>%
-#     group_by(Overview, Productivity) %>%
-#     summarise(Time_min = sum(Time_sec) / length(all_dates) / 60) %>%
-#     mutate(TotTime = sum(Time_min))
-#   
-#   nhours <- length(all_dates) * sum(Category$Time_min) / 60
-#   
-#   make.donut <- function(df, category){
-#     
-#     subset <- df %>%
-#       filter(Overview == category) %>%
-#       mutate(fraction = Time_min / sum(Time_min))
-#     
-#     par(mar = c(2, 0, 0, 0), xaxs = "i", yaxs = "i", family = "Comfortaa")
-#     
-#     pie(subset$fraction, clockwise = TRUE, 
-#         col = Productivity_col[-6][unique(as.character(subset$Productivity))], 
-#         border = "white",labels = NA, xlim = c(-0.7, 0.7), ylim = c(-0.7, 0.7))
-#     symbols(0,0, circles = 0.35, fg = "white", bg = "white", 
-#             add = TRUE, inches = FALSE)
-#     text(0, -0.9, labels = category, font = 2, col = "grey20",
-#          cex = 1, adj=c(0.5, 1), xpd = TRUE)
-#     text(0, -1, paste0("\n(", round(unique(subset$TotTime)), " min/day)"), 
-#          col = "grey20", cex = 1, adj=c(0.5, 1), xpd = TRUE)
-#   }
-#   
-#   if(is.na(plot_h)){plot_h <- dev.size("cm")[2]}
-#     
-#   h_title <- 1.5
-#   h_legend <- 1.8
-#   
-#   layout(matrix(c(rep(1, 4), rep(2, 4), 3:14), nrow = 5, ncol =  4, byrow = TRUE),
-#          heights = lcm(c(h_title, h_legend)))
-#   
-#   # first plot is a title + subtitle
-#   par(mar = c(0, 0, 0, 0), family = "Comfortaa")
-#   plot.new()
-#   text(0, 1, "Productivity pulse of the 12 main Categories", 
-#        adj = c(0, 1), col = "grey20", font = 2, cex = 2, xpd = TRUE)
-#   text(0, 0, paste0("Measured with RescueTime (", length(all_dates), " days)"), 
-#        adj = c(0, 0.5), col = "grey30", cex = 1.5, xpd = TRUE)
-#   
-#   # second plot is the legend:
-#   par(mar = c(0, 0, 0, 0))
-#   plot.new()
-#   legend(0.5, 0.5, legend = levels(Category$Productivity),
-#          fill = Productivity_col[levels(Category$Productivity)], 
-#          title.adj = 0, title.col = "grey20",
-#          y.intersp = 1.2, text.col = "grey30",
-#          border = "transparent", ncol=2,
-#          cex = 1.2, xjust = 0.5, yjust = 0.5, bty = "n", xpd = TRUE)
-#   
-#   # then add the individual donut plots:
-#   lapply(levels(Category$Overview), function(Overview){
-#     image <- readPNG(file.path("img", "Categories", paste0(
-#       gsub(" .*$", "", Overview), ".png")))
-#     make.donut(df = Category, category = Overview)
-#     rasterImage(image, xleft = -0.5, xright = 0.5, ybottom = -0.5, ytop = 0.5)
-#    })
-# }
-# make.donut.RT()

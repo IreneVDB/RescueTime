@@ -101,9 +101,6 @@ setup.plot <- function(data, ma_cm= c(4.2, 2, 2, 0.2), om_cm= c(1, 1, 1, 1),
 setup.plot(data, ma_cm=c(1, 1.5, 0.5, 0.5), om_cm=c(0.8, 0.8, 0.8, 0.8))
 
 
-
-
-
 load("/Users/irenevandenbroek/Documents/R-Projects/Projects/QuantifiedSelf/Sleep/Dreem.RData")
 
 
