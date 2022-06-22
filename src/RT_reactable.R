@@ -594,4 +594,11 @@ make.reactable(Overview = RescueTime[["Overview"]],
                img_path_Overview = "img/Categories",
                img_path_Activity = "img/Programs",
                time_limit = 1/60,
-               recolor = FALSE)
+               recolor = FALSE) %>%
+  reactablefmtr::add_title("How do I spend my time on my laptop?", 
+                           font_color = "#251a66") %>%
+  reactablefmtr::add_subtitle(paste0("Measured with RescueTime (",
+                                     length(seq(RescueTime[["day"]]$Date[1], rev(RescueTime[["day"]]$Date)[1], by = "day")),
+                                     " days)"),
+                              font_color = "#251a66") %>%
+  reactablefmtr::save_reactable("output/RT_reactable.html")
