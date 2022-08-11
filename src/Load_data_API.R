@@ -4,6 +4,12 @@ library(lubridate)
 library(tidyverse)
 library(pins)
 
+# keyring_create("RescueTime")
+# key_set("key", keyring = "RescueTime")
+# key_set("username", keyring = "RescueTime")
+# key_set("password", keyring = "RescueTime")
+# keyring_lock("RescueTime")
+
 get.RT.api <- function(key, perspective, taxonomy, interval, startdate, enddate, 
                        format = "csv", device, username, password){
   
