@@ -70,13 +70,14 @@ get.productivity.summary <- function(){
     left_join(data.frame(Date = all_dates), ., by = "Date") %>%
     group_by(Date, Productivity) %>%
     summarise(Time_sec = sum(Time_sec)) %>%
-    right_join(expand(., Date, Productivity)) %>%
+    right_join(expand(., Productivity)) %>%
     replace_na(., list(Time_sec = 0)) %>%
+    filter(is.na(Productivity) == FALSE) %>%
     mutate(Time_min = Time_sec / 60,
            label = "Time/day",
            unit = "mins") %>%
     arrange(Date, Productivity)
-  
+    
   Productivity[["all_time"]] <- Productivity[["day"]] %>%
     group_by(Productivity) %>%
     summarise(Time_min = mean(Time_min, na.rm = TRUE)) %>%

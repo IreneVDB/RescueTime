@@ -158,7 +158,7 @@ df.RTreactable <- function(){
                               {{value}} == "messages" ~ "fontaweomse comment",
                               grepl("photo", {{value}}, ignore.case = TRUE) == TRUE ~ "fontawesome image",
                               {{value}} == "iWork Numbers" ~ "fontawesome chart-bar",
-                              {{value}} == "onewireviewer" ~ "simple-icons java",
+                              {{value}} == "onewireviewer" ~ "simple-icons javascript",
                               {{value}} %in% c("localhost", "IP address") ~ "fontawesome network-wired",
                               {{value}} == "installer" ~ "fontawesome download",
                               {{value}} == "screencastomatic" ~ "video",
